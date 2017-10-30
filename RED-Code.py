@@ -4,9 +4,8 @@ import numpy
 
 
 class tube:
-
-    def __int__(self, name, section, material, cost, l, d, thickness, e, style, kb, ba, br):
-        # type: (str, str, str, int, int, int, int, int, int, str, int, int, int) -> tube
+    def __init__(self, name, section, material, cost, l, d, thickness, e, style, kb, ba, br):
+        # type: (str, str, str, float, float, float, float, float, str, float, float, float) -> tube
         self.name = name
         self.section = section
         self.material = material
@@ -22,8 +21,7 @@ class tube:
 
 
 class valve:
-
-    def __int__(self, name, material, weight, cost, d, style, k):
+    def __init__(self, name, material, weight, cost, d, style, k):
         self.name = name
         self.material = material
         self.weight = weight
@@ -37,7 +35,7 @@ def velocity(m_dot, current_d, rho):
     # Function computes the velocity for changing dimensions
     # m_dot is in slug / in ^ 3, d is in inches, rho is in slug / in ^ 3
     # output velocity is in [ in / s]
-    a = (math.pi / 4) * (current_d ^ 2)
+    a = (math.pi / 4) * (math.pow(current_d, 2))
     v = m_dot / (rho * a)
     return v
 
@@ -99,13 +97,13 @@ def moody(ed, re):
     # --- sanity check:
 
     if f < 0:
-        print 'Friction factor = ' + f + ' , but cannot be negative'
+        print 'Friction factor = ', f, ' , but cannot be negative'
         return f
     return f
 
 
 def tube_dp(l, d, v, rho, f, style, br, ba, kb):
-    # type: (int, int, int, int, int, str, int, int, int, int) -> int
+    # type: (float, float, float, float, float, str, float, float, float, float) -> float
     # re removed because not used
     # Function computes tube pressure drop
     # To calculate pressure accross the tube
@@ -135,7 +133,7 @@ def valvedp(k, v, rho):
 
 
 def flowcoef(q, sg, param):
-    # type: (int, int, int) -> int
+    # type: (float, float, float) -> float
     # Short function computes the flow coefficient
     # Function uses the volumetric flow rate, specific gravity, and pressure
     # drop through the element...
@@ -154,16 +152,16 @@ def pressure2gg(pi, m_dot, rho, mu, sg, q, t_tube, v_valve):
     re = reynolds(v, t_tube.d, rho, mu)
     ed = relative_roughness(t_tube.e, t_tube.d)
     f = moody(ed, re)
-    dp[1] = tube_dp(t_tube.l, t_tube.d, v, rho, f, t_tube.style, t_tube.br, t_tube.ba, t_tube.kb)
+    dp[0] = tube_dp(t_tube.l, t_tube.d, v, rho, f, t_tube.style, t_tube.br, t_tube.ba, t_tube.kb)
     # Cv(1) = flowcoef(Q,SG,dp(1));
-    po = pi - dp[1]
+    po = pi - dp[0]
     # through check valve 2:
     p = po
     v = velocity(m_dot, v_valve.d, rho)
-    dp[2] = valvedp(v_valve.k, v, rho)
-    cv[2] = flowcoef(q, sg, dp[2])
-    p_gg = p - dp[2]
-    print 'The result of this function is p_gg =' + p_gg
+    dp[1] = valvedp(v_valve.k, v, rho)
+    cv[1] = flowcoef(q, sg, dp[1])
+    p_gg = p - dp[1]
+    print "The result of this function is p_gg =", p_gg
     # tube section 2: DEALING WITH DIVERGING SECTIONS>....
     # outlet of pump
     # passes through some tube
@@ -177,5 +175,8 @@ def pressure2gg(pi, m_dot, rho, mu, sg, q, t_tube, v_valve):
     # into GG.
     return
 
+
 check_valve2 = valve('FIT6-23', 'Stainless_Steel', 123, 1200, 3.5, 'Check', 2)
-rp1_tube1 = tube('name1', 'section1', 'Stainless-Steel', 250, 12*2.5, 3.5, 1, 12*0.000049, 'straight', 0, 0, 0)
+rp1_tube1 = tube('name1', 'section1', 'Stainless-Steel', 1500, 12*2.5, 3.5, 1, 12*0.000049, 'straight', 0, 0, 0)
+
+pressure2gg(100, 100, 10, .5, 200, 100, rp1_tube1, check_valve2)  # Test case numbers are Sam's (Dumb) guesses
