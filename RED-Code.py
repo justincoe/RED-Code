@@ -142,7 +142,7 @@ def flowcoef(vol_flow, spec_grav, pressure_diff):
     return cv
 
 
-def pressure_to_gg(pressure_in, m_dot, rho, dyn_visc_mu, spec_grav, vol_flow, t_tube, v_valve):
+def pressure_section(pressure_in, m_dot, rho, dyn_visc_mu, spec_grav, vol_flow, t_tube, v_valve, section_num):
     # Pressure psi, m_dot slugs/s, rho slugs/in^3, dyn_visc_mu slugs/(in*s), vol_flow gallon/min
     # Function computes the pressure to the RP1 gas generator inlet
     # Detailed explanation goes here
@@ -162,8 +162,8 @@ def pressure_to_gg(pressure_in, m_dot, rho, dyn_visc_mu, spec_grav, vol_flow, t_
     velocition = velocity_calc(m_dot, v_valve.diameter, rho)
     dp[1] = valvedp(v_valve.k, velocity, rho)
     cv[1] = flowcoef(vol_flow, spec_grav, dp[1])
-    pressure_gas_generator = pressure - dp[1]
-    print("The result of this function is pressure_gas_generator =", pressure_gas_generator)
+    pressure_end = pressure - dp[1]
+    print("The pressure at the end of section ", section_num, " is ", pressure_end, " psi")
     # tube section 2: DEALING WITH DIVERGING SECTIONS>....
     # outlet of pump
     # passes through some tube
@@ -175,11 +175,14 @@ def pressure_to_gg(pressure_in, m_dot, rho, dyn_visc_mu, spec_grav, vol_flow, t_
     # passes through poppet valve
     # tube
     # into GG.
-    return
+    return pressure_end
 
 
 check_valve2 = valve('FIT6-23', 'Stainless_Steel', 123, 1200, 3.5, 'Check', 2)
 rp1_tube1 = tube('name1', 'section1', 'Stainless-Steel', 1500, 12*2.5, 3.5, 1, 12*0.000049, 'straight', 0, 0, 0)
 RHO_RP1 = 0.9095    # Slugs / in^3
 # MU is in slug / in seconds
-pressure_to_gg(100, 3.85, RHO_RP1, .0141, RHO_RP1, 1100, rp1_tube1, check_valve2)  # Test case numbers
+pressure_in_0 = 100
+pressure_in_1 = pressure_section(pressure_in_0, 3.85, RHO_RP1, .0141, RHO_RP1, 1100, rp1_tube1, check_valve2, 1)  # Test case numbers
+pressure_in_2 = pressure_section(pressure_in_1, 3.85, RHO_RP1, .0141, RHO_RP1, 1100, rp1_tube1, check_valve2, 2)
+pressure_in_3 = pressure_section(pressure_in_2, 3.85, RHO_RP1, .0141, RHO_RP1, 1100, rp1_tube1, check_valve2, 3)
