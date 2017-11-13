@@ -41,11 +41,11 @@ def velocity_calc(m_dot, current_d, rho):
     return v
 
 
-def reynolds(velocity, diameter, rho, mu):
+def reynolds(velocity, diameter, rho, dyn_visc_mu):
     # Function computes reynolds number when called
     # input: velocity, diameter, density, dynamic viscosity
     # density and dynamic viscosity could be changing...
-    reynolds_num = rho * velocity * diameter / mu
+    reynolds_num = rho * velocity * diameter / dyn_visc_mu
     return reynolds_num
 
 
@@ -133,16 +133,17 @@ def valvedp(k, velocity, rho):
     return pdrop
 
 
-def flowcoef(q, sg, param):
+def flowcoef(vol_flow, spec_grav, pressure_diff):
     # type: (float, float, float) -> float
     # Short function computes the flow coefficient
     # Function uses the volumetric flow rate, specific gravity, and pressure
     # drop through the element...
-    cv = q * math.sqrt(sg / param)
+    cv = vol_flow * math.sqrt(spec_grav / pressure_diff)
     return cv
 
 
-def pressure_to_gg(pressure_in, m_dot, rho, mu, sg, q, t_tube, v_valve):
+def pressure_to_gg(pressure_in, m_dot, rho, dyn_visc_mu, spec_grav, vol_flow, t_tube, v_valve):
+    # Pressure psi, m_dot slugs/s, rho slugs/in^3, dyn_visc_mu slugs/(in*s), vol_flow gallon/min
     # Function computes the pressure to the RP1 gas generator inlet
     # Detailed explanation goes here
     dp = [0, 0]
@@ -150,7 +151,7 @@ def pressure_to_gg(pressure_in, m_dot, rho, mu, sg, q, t_tube, v_valve):
     # Flow paths: RP1 pump outlet to gas generator inlet:
     # tube section 1:
     velocity = velocity_calc(m_dot, t_tube.diameter, rho)
-    reynolds_num = reynolds(velocity, t_tube.diameter, rho, mu)
+    reynolds_num = reynolds(velocity, t_tube.diameter, rho, dyn_visc_mu)
     relative_roughness = relative_roughness_calc(t_tube.roughness_e, t_tube.diameter)
     friction_factor = moody(relative_roughness, reynolds_num)
     dp[0] = tube_dp(t_tube.length, t_tube.diameter, velocity, rho, friction_factor, t_tube.style, t_tube.br, t_tube.ba, t_tube.kb)
@@ -160,7 +161,7 @@ def pressure_to_gg(pressure_in, m_dot, rho, mu, sg, q, t_tube, v_valve):
     pressure = pressure_out
     velocition = velocity_calc(m_dot, v_valve.diameter, rho)
     dp[1] = valvedp(v_valve.k, velocity, rho)
-    cv[1] = flowcoef(q, sg, dp[1])
+    cv[1] = flowcoef(vol_flow, spec_grav, dp[1])
     pressure_gas_generator = pressure - dp[1]
     print("The result of this function is pressure_gas_generator =", pressure_gas_generator)
     # tube section 2: DEALING WITH DIVERGING SECTIONS>....
@@ -180,4 +181,5 @@ def pressure_to_gg(pressure_in, m_dot, rho, mu, sg, q, t_tube, v_valve):
 check_valve2 = valve('FIT6-23', 'Stainless_Steel', 123, 1200, 3.5, 'Check', 2)
 rp1_tube1 = tube('name1', 'section1', 'Stainless-Steel', 1500, 12*2.5, 3.5, 1, 12*0.000049, 'straight', 0, 0, 0)
 RHO_RP1 = 0.9095    # Slugs / in^3
-pressure_to_gg(100, 3.85, RHO_RP1, .5, 200, 100, rp1_tube1, check_valve2)  # Test case numbers
+# MU is in slug / in seconds
+pressure_to_gg(100, 3.85, RHO_RP1, .0141, RHO_RP1, 1100, rp1_tube1, check_valve2)  # Test case numbers
