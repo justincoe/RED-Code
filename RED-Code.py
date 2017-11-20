@@ -4,7 +4,7 @@ import numpy
 
 
 class tube:
-    def __init__(self, name, section, material, cost, length, diameter, thickness, roughness_e, style, kb, ba, br):
+    def __init__(self, name, section, material, cost, length, diameter, thickness, roughness_e, style, kb, bend_angle, bend_radius):
         # type: (str, str, str, float, float, float, float, float, str, float, float, float) -> tube
         # English Units
         self.name = name
@@ -17,8 +17,8 @@ class tube:
         self.roughness_e = roughness_e
         self.style = style
         self.kb = kb
-        self.ba = ba
-        self.br = br
+        self.bend_angle = bend_angle
+        self.bend_radius = bend_radius
 
 
 class valve:
@@ -90,7 +90,7 @@ def moody(relative_roughness, reynolds_num):
     def cole_fun(f_in):
         1.0 / math.sqrt(f_in) + 2.0 * math.log10(relative_roughness / 3.7 + 2.51 / (relative_roughness * math.sqrt(friction_factor)))
 
-    fi = numpy.empty([1,2])
+    fi = numpy.empty([1, 2])
     fi[1] = [1 / (1.8 * math.pow(math.log10(6.9 / reynolds_num + math.pow((relative_roughness / 3.7), 1.11)), 2))]
     #  initial guess at f
     # dfTol = 5e-6; --- TOOK OUT ---
@@ -103,7 +103,7 @@ def moody(relative_roughness, reynolds_num):
     return friction_factor
 
 
-def tube_dp(length, diameter, velocity, rho, friction_factor, style, br, ba, kb):
+def tube_dp(length, diameter, velocity, rho, friction_factor, style, bend_radius, bend_angle, kb):
     # type: (float, float, float, float, float, str, float, float, float, float) -> float
     # re removed because not used
     # Function computes tube pressure drop
@@ -119,7 +119,7 @@ def tube_dp(length, diameter, velocity, rho, friction_factor, style, br, ba, kb)
         pdrop = head * rho
         return pdrop
     elif style == 'curved':
-        pdrop = (0.5 * friction_factor * rho * (math.pow(velocity, 2)) * math.pi * br / diameter * ba / 180) + (0.5 * kb * rho * (math.pow(velocity, 2)))
+        pdrop = (0.5 * friction_factor * rho * (math.pow(velocity, 2)) * math.pi * bend_radius / diameter * bend_angle / 180) + (0.5 * kb * rho * (math.pow(velocity, 2)))
         return pdrop
 
 
@@ -154,7 +154,7 @@ def pressure_section(pressure_in, m_dot, rho, dyn_visc_mu, spec_grav, vol_flow, 
     reynolds_num = reynolds(velocity, t_tube.diameter, rho, dyn_visc_mu)
     relative_roughness = relative_roughness_calc(t_tube.roughness_e, t_tube.diameter)
     friction_factor = moody(relative_roughness, reynolds_num)
-    dp[0] = tube_dp(t_tube.length, t_tube.diameter, velocity, rho, friction_factor, t_tube.style, t_tube.br, t_tube.ba, t_tube.kb)
+    dp[0] = tube_dp(t_tube.length, t_tube.diameter, velocity, rho, friction_factor, t_tube.style, t_tube.bend_radius, t_tube.bend_angle, t_tube.kb)
     # Cv(1) = flowcoef(Q,SG,dp(1));
     pressure_out = pressure_in - dp[0]
     # through check valve 2:
